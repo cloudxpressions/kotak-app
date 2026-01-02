@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Block direct access to sensitive files
+RewriteRule ^(\.env|\.git|storage|database|config|app)\/? - [F,L]
+
+# Route all requests through index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [QSA,L]

@@ -1,0 +1,29 @@
+# Dependencies
+vendor/
+
+# Environment specific settings
+.env
+.env.local
+.env.*.local
+
+# Storage
+storage/logs/*
+storage/cache/*
+storage/uploads/*
+
+# Composer
+composer.lock
+composer.phar
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
