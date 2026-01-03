@@ -2,58 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class UserSavedItem extends Model
 {
-    protected $table = 'user_saved_items';
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
         'entity_type',
         'entity_id',
-        'action'
+        'action',
     ];
-    
-    public static function findByUserAndEntity($userId, $entityType, $entityId, $action = null)
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'entity_id' => 'integer',
+    ];
+
+    /**
+     * Get the user that owns the saved item.
+     */
+    public function user(): BelongsTo
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        
-        $sql = "SELECT * FROM user_saved_items WHERE user_id = ? AND entity_type = ? AND entity_id = ?";
-        $params = [$userId, $entityType, $entityId];
-        
-        if ($action) {
-            $sql .= " AND action = ?";
-            $params[] = $action;
-        }
-        
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        
-        $result = $stmt->fetch();
-        
-        return $result ? new self($result) : null;
-    }
-    
-    public static function findByUser($userId, $action = null)
-    {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        
-        $sql = "SELECT * FROM user_saved_items WHERE user_id = ?";
-        $params = [$userId];
-        
-        if ($action) {
-            $sql .= " AND action = ?";
-            $params[] = $action;
-        }
-        
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        
-        $results = $stmt->fetchAll();
-        $savedItems = [];
-        
-        foreach ($results as $result) {
-            $savedItems[] = new self($result);
-        }
-        
-        return $savedItems;
+        return $this->belongsTo(User::class);
     }
 }

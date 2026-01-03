@@ -2,55 +2,126 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Question extends Model
 {
-    protected $table = 'questions';
+    use HasFactory;
+
     protected $fillable = [
         'difficulty',
-        'correct_option'
+        'correct_option',
+        'is_active',
     ];
 
-    public static function all()
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Get the translations for the question.
+     */
+    public function translations(): HasMany
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        $table = static::getTable();
-
-        // Join with question_translations to get question text
-        // Note: questions table doesn't have is_active, so we'll add a default status
-        $sql = "SELECT q.*, qt.question_text, q.correct_option as correct_answer, 1 as status
-                FROM questions q
-                LEFT JOIN question_translations qt ON q.id = qt.question_id AND qt.language_code = 'en'";
-        $stmt = $db->query($sql);
-
-        $results = $stmt->fetchAll();
-        $models = [];
-
-        foreach ($results as $result) {
-            $models[] = new static($result);
-        }
-
-        return $models;
+        return $this->hasMany(QuestionTranslation::class);
     }
 
-    public static function findByTest($testId)
+    /**
+     * Get the test questions for this question.
+     */
+    public function testQuestions(): HasMany
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
+        return $this->hasMany(TestQuestion::class);
+    }
 
-        $sql = "SELECT q.*, qt.question_text, q.correct_option as correct_answer, 1 as status FROM questions q
-                JOIN test_questions tq ON q.id = tq.question_id
-                LEFT JOIN question_translations qt ON q.id = qt.question_id AND qt.language_code = 'en'
-                WHERE tq.test_id = ?
-                ORDER BY tq.order_no";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$testId]);
+    /**
+     * Scope to get only active questions
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
-        $results = $stmt->fetchAll();
-        $questions = [];
-
-        foreach ($results as $result) {
-            $questions[] = new static($result);
+    /**
+     * Get the question text in the current locale
+     */
+    public function getQuestionTextAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
         }
 
-        return $questions;
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->question_text : ($this->translations->first()->question_text ?? '');
+    }
+
+    /**
+     * Get option A in the current locale
+     */
+    public function getOptionAAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->option_a : ($this->translations->first()->option_a ?? '');
+    }
+
+    /**
+     * Get option B in the current locale
+     */
+    public function getOptionBAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->option_b : ($this->translations->first()->option_b ?? '');
+    }
+
+    /**
+     * Get option C in the current locale
+     */
+    public function getOptionCAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->option_c : ($this->translations->first()->option_c ?? '');
+    }
+
+    /**
+     * Get option D in the current locale
+     */
+    public function getOptionDAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->option_d : ($this->translations->first()->option_d ?? '');
     }
 }

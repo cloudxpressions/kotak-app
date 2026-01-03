@@ -1,245 +1,216 @@
-# Insurance Guide - Backend API
+🧠 INSURANCE APP – FEATURE MIGRATION SCHEMA (ONLY)
+1️⃣ Insurance Categories (Life / Health / General)
+insurance_categories
+id BIGINT PK
+slug VARCHAR(50) UNIQUE          -- life, health, general
+order_no INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
+updated_at TIMESTAMP
 
-A comprehensive, multilingual backend API for an insurance guide application built with vanilla PHP. This backend is designed to support a mobile-first application with features like content management, testing engine, performance tracking, and user management.
+insurance_category_translations
+id BIGINT PK
+insurance_category_id BIGINT FK
+language_code VARCHAR(10)
+name VARCHAR(255)
+description TEXT NULL
+UNIQUE (insurance_category_id, language_code)
 
-## Features
+2️⃣ Exam Configuration (IC-38, IC-39 future)
+exams
+id BIGINT PK
+code VARCHAR(20) UNIQUE           -- IC-38
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-- **API-first architecture** - Built for mobile applications
-- **Multilingual support** - Content available in multiple languages
-- **User authentication & management** - JWT-based authentication
-- **Content management** - Chapters, topics, questions, terminology
-- **Testing engine** - Practice tests with performance tracking
-- **User activity tracking** - Bookmarks, pins, and saved items
-- **Admin panel** - Content and user management
-- **Ad monetization** - Ad tracking and analytics
+exam_translations
+id BIGINT PK
+exam_id BIGINT FK
+language_code VARCHAR(10)
+name VARCHAR(255)
+description TEXT
+UNIQUE (exam_id, language_code)
 
-## Tech Stack
+3️⃣ Chapters (Insurance Syllabus)
+chapters
+id BIGINT PK
+exam_id BIGINT FK
+insurance_category_id BIGINT FK
+order_no INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-- **Language**: PHP 7.4+
-- **Database**: MySQL
-- **Authentication**: JWT (JSON Web Tokens)
-- **Architecture**: MVC with Service Layer
-- **API Format**: JSON
+chapter_translations
+id BIGINT PK
+chapter_id BIGINT FK
+language_code VARCHAR(10)
+title VARCHAR(255)
+description TEXT NULL
+UNIQUE (chapter_id, language_code)
 
-## Folder Structure
+4️⃣ Concepts (Detailed Theory)
+concepts
+id BIGINT PK
+chapter_id BIGINT FK
+order_no INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-```
-├── public/                         # Publicly accessible
-│   ├── index.php                   # API entry point (mobile)
-│   ├── admin.php                   # Admin panel entry
-│   ├── .htaccess                   # Rewrite rules, security headers
-│   └── assets/                     # Admin CSS/JS (Bootstrap)
-│
-├── app/                            # Application core
-│   │
-│   ├── Core/                       # Framework-like base classes
-│   │   ├── App.php                 # Bootstrap app
-│   │   ├── Database.php            # PDO singleton
-│   │   ├── Router.php              # Route dispatcher
-│   │   ├── Request.php             # Request abstraction
-│   │   ├── Response.php            # JSON responses
-│   │   ├── Validator.php           # Input validation
-│   │   ├── Auth.php                # Auth helpers
-│   │   ├── RBAC.php                # Role & permission checks
-│   │   └── Language.php            # Language resolver + fallback
-│   │
-│   ├── Middleware/                 # Request filters
-│   │   ├── AuthMiddleware.php      # JWT validation
-│   │   ├── RoleMiddleware.php      # Admin role enforcement
-│   │   ├── RateLimitMiddleware.php # Anti-abuse
-│   │   └── LanguageMiddleware.php  # Accept-Language handling
-│   │
-│   ├── Controllers/
-│   │   ├── Api/                    # Mobile / public APIs
-│   │   │   ├── AuthController.php
-│   │   │   ├── ProfileController.php
-│   │   │   ├── ContentController.php
-│   │   │   ├── TestController.php
-│   │   │   ├── PerformanceController.php
-│   │   │   ├── BookmarkController.php
-│   │   │   ├── SettingsController.php
-│   │   │   └── AdsController.php
-│   │   │
-│   │   └── Admin/                  # Admin web controllers
-│   │       ├── DashboardController.php
-│   │       ├── UserController.php
-│   │       ├── ContentController.php
-│   │       ├── TranslationController.php
-│   │       ├── TestController.php
-│   │       ├── SettingsController.php
-│   │       ├── RoleController.php
-│   │       └── AnalyticsController.php
-│   │
-│   ├── Models/                     # Database models
-│   │   ├── User.php
-│   │   ├── Admin.php
-│   │   ├── Role.php
-│   │   ├── Permission.php
-│   │   ├── Language.php
-│   │   ├── Chapter.php
-│   │   ├── ChapterTranslation.php
-│   │   ├── Topic.php
-│   │   ├── TopicTranslation.php
-│   │   ├── Question.php
-│   │   ├── QuestionTranslation.php
-│   │   ├── Terminology.php
-│   │   ├── TerminologyTranslation.php
-│   │   ├── Material.php
-│   │   ├── MaterialTranslation.php
-│   │   ├── Test.php
-│   │   ├── TestAttempt.php
-│   │   ├── PerformanceStat.php
-│   │   ├── UserSavedItem.php
-│   │   ├── Setting.php
-│   │   └── AdEvent.php
-│   │
-│   ├── Services/                   # Business logic
-│   │   ├── JwtService.php
-│   │   ├── AuthService.php
-│   │   ├── ContentService.php
-│   │   ├── TestEngineService.php
-│   │   ├── PerformanceService.php
-│   │   ├── BookmarkService.php
-│   │   ├── SettingsService.php
-│   │   └── AdTrackingService.php
-│   │
-│   └── Helpers/                    # Utility functions
-│       ├── response_helper.php
-│       ├── auth_helper.php
-│       ├── language_helper.php
-│       └── date_helper.php
-│
-├── routes/                         # Route definitions
-│   ├── api.php                     # Mobile APIs
-│   └── admin.php                   # Admin routes
-│
-├── config/                         # Configuration
-│   ├── app.php
-│   ├── database.php
-│   ├── jwt.php
-│   └── ads.php
-│
-├── storage/                        # Writable directories
-│   ├── logs/
-│   ├── uploads/
-│   │   ├── materials/
-│   │   └── posters/
-│   └── cache/
-│
-├── database/                       # DB utilities
-│   ├── migrations/
-│   └── seeders/
-│
-├── vendor/                         # Composer (JWT, dotenv)
-│
-├── .env                            # Environment variables
-└── README.md
-```
+concept_translations
+id BIGINT PK
+concept_id BIGINT FK
+language_code VARCHAR(10)
+title VARCHAR(255)
+content_html LONGTEXT
+UNIQUE (concept_id, language_code)
 
-## Installation
+5️⃣ One-Liners (Exam Quick Points)
+one_liners
+id BIGINT PK
+chapter_id BIGINT FK
+order_no INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-1. Clone the repository
-2. Install dependencies with Composer:
-   ```bash
-   composer install
-   ```
-3. Create a `.env` file based on `.env.example` and configure your database settings
-4. Run the database migrations:
-   ```bash
-   php migrate.php
-   ```
-5. Set up your web server to point to the `public/` directory
+one_liner_translations
+id BIGINT PK
+one_liner_id BIGINT FK
+language_code VARCHAR(10)
+content TEXT
+UNIQUE (one_liner_id, language_code)
 
-## API Endpoints
+6️⃣ Short & Simple (Simplified Explanation)
+short_simples
+id BIGINT PK
+chapter_id BIGINT FK
+order_no INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/refresh` - Token refresh
+short_simple_translations
+id BIGINT PK
+short_simple_id BIGINT FK
+language_code VARCHAR(10)
+title VARCHAR(255)
+content TEXT
+UNIQUE (short_simple_id, language_code)
 
-### Profile
-- `GET /api/profile` - Get user profile
-- `PUT /api/profile` - Update user profile
+7️⃣ Terminology (A–Z Insurance Terms)
+terminologies
+id BIGINT PK
+exam_id BIGINT FK
+category VARCHAR(50) NULL
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-### Content
-- `GET /api/chapters` - Get all chapters
-- `GET /api/chapters/{id}` - Get specific chapter
-- `GET /api/topics` - Get all topics
-- `GET /api/topics/{id}` - Get specific topic
-- `GET /api/terminologies` - Get all terminologies
-- `GET /api/terminologies/{id}` - Get specific terminology
+terminology_translations
+id BIGINT PK
+terminology_id BIGINT FK
+language_code VARCHAR(10)
+term VARCHAR(255)
+definition TEXT
+UNIQUE (terminology_id, language_code)
 
-### Tests
-- `GET /api/tests` - Get all tests
-- `POST /api/tests/{id}/attempt` - Start a test
-- `POST /api/tests/{id}/submit` - Submit test answers
+8️⃣ Study Materials (E-Notes / Posters)
+materials
+id BIGINT PK
+exam_id BIGINT FK
+type ENUM('pdf','poster','note')
+file_size INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-### Performance
-- `GET /api/performance` - Get user performance stats
+material_translations
+id BIGINT PK
+material_id BIGINT FK
+language_code VARCHAR(10)
+title VARCHAR(255)
+file_path VARCHAR(255)
+UNIQUE (material_id, language_code)
 
-### Bookmarks
-- `POST /api/save` - Save an item
-- `DELETE /api/save` - Remove a saved item
-- `GET /api/saved-items` - Get saved items
+9️⃣ Test Engine (Mock / Practice / Live)
+tests
+id BIGINT PK
+exam_id BIGINT FK
+chapter_id BIGINT NULL
+type ENUM('mock','practice','live','chapter')
+total_questions INT
+duration_minutes INT
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-### Settings
-- `GET /api/settings` - Get app settings
+test_translations
+id BIGINT PK
+test_id BIGINT FK
+language_code VARCHAR(10)
+title VARCHAR(255)
+description TEXT NULL
+UNIQUE (test_id, language_code)
 
-### Ads
-- `POST /api/ads/track` - Track ad events
+🔟 Questions (Multilingual)
+questions
+id BIGINT PK
+difficulty ENUM('easy','medium','hard')
+correct_option CHAR(1)
+is_active BOOLEAN DEFAULT 1
+created_at TIMESTAMP
 
-## Environment Variables
+question_translations
+id BIGINT PK
+question_id BIGINT FK
+language_code VARCHAR(10)
+question_text TEXT
+option_a TEXT
+option_b TEXT
+option_c TEXT
+option_d TEXT
+UNIQUE (question_id, language_code)
 
-Create a `.env` file in the root directory with the following variables:
+test_questions
+test_id BIGINT FK
+question_id BIGINT FK
+PRIMARY KEY (test_id, question_id)
 
-```env
-APP_NAME="Insurance Guide"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://localhost
+1️⃣1️⃣ Test Attempts
+test_attempts
+id BIGINT PK
+user_id BIGINT FK
+test_id BIGINT FK
+score INT
+started_at TIMESTAMP
+submitted_at TIMESTAMP
 
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=insurance_guide
-DB_USER=root
-DB_PASS=
+1️⃣2️⃣ Performance Summary
+performance_stats
+user_id BIGINT PK
+exam_id BIGINT FK
+total_tests INT DEFAULT 0
+avg_score DECIMAL(5,2)
+accuracy DECIMAL(5,2)
+last_test_at TIMESTAMP
 
-JWT_SECRET=your_jwt_secret_key_here
+1️⃣3️⃣ User Tracking (Bookmarks / Pins)
+user_saved_items
+id BIGINT PK
+user_id BIGINT FK
+entity_type ENUM(
+ 'chapter',
+ 'concept',
+ 'one_liner',
+ 'short_simple',
+ 'terminology',
+ 'material',
+ 'question'
+)
+entity_id BIGINT
+action ENUM('bookmark','pin')
+created_at TIMESTAMP
 
-# Ad configuration
-ADS_ENABLED=true
-INTERSTITIAL_INTERVAL=3
-```
-
-## Database Schema
-
-The application uses a multilingual design with translation tables:
-
-- `languages` - Supported languages
-- `users` - User accounts with extensive profile fields
-- `chapters` - Content chapters (language neutral)
-- `chapter_translations` - Chapter titles and descriptions in different languages
-- `topics` - Content topics (language neutral)
-- `topic_translations` - Topic titles and content in different languages
-- `questions` - Test questions (language neutral)
-- `question_translations` - Question text and options in different languages
-- `terminologies` - Insurance terminology (language neutral)
-- `terminology_translations` - Terms and definitions in different languages
-- `user_saved_items` - Unified table for bookmarks, pins, etc.
-- `settings` - System-wide and app-wide settings
-- `tests`, `test_attempts` - Test management and results
-- `performance_stats` - User performance tracking
-- `ad_events` - Ad tracking and analytics
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
+1️⃣4️⃣ Ads Tracking (Mobile-Only)
+ad_events
+id BIGINT PK
+user_id BIGINT FK
+ad_type ENUM('banner','interstitial','rewarded')
+event ENUM('shown','clicked','completed')
+platform ENUM('android','ios')
+created_at TIMESTAMP

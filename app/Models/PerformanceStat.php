@@ -2,27 +2,48 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class PerformanceStat extends Model
 {
-    protected $table = 'performance_stats';
+    use HasFactory;
+
     protected $fillable = [
         'user_id',
+        'exam_id',
         'total_tests',
         'avg_score',
         'accuracy',
-        'last_test_at'
+        'last_test_at',
     ];
-    
-    public static function findByUser($userId)
+
+    protected $casts = [
+        'user_id' => 'integer',
+        'exam_id' => 'integer',
+        'total_tests' => 'integer',
+        'avg_score' => 'decimal:2',
+        'accuracy' => 'decimal:2',
+    ];
+
+    protected $dates = [
+        'last_test_at',
+    ];
+
+    /**
+     * Get the user that owns the performance stat.
+     */
+    public function user(): BelongsTo
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        
-        $sql = "SELECT * FROM performance_stats WHERE user_id = ?";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$userId]);
-        
-        $result = $stmt->fetch();
-        
-        return $result ? new self($result) : null;
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the exam that owns the performance stat.
+     */
+    public function exam(): BelongsTo
+    {
+        return $this->belongsTo(Exam::class);
     }
 }

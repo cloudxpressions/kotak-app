@@ -2,43 +2,60 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 class Language extends Model
 {
-    protected $table = 'languages';
+    use HasFactory, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('language')
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
     protected $fillable = [
-        'code',
         'name',
         'native_name',
-        'is_active'
+        'code',
+        'slug',
+        'direction',
+        'is_default',
+        'is_active',
     ];
-    
-    public static function findByCode($code)
+
+    protected $casts = [
+        'is_default' => 'boolean',
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Scope to get only active languages
+     */
+    public function scopeActive(Builder $query): Builder
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        
-        $sql = "SELECT * FROM languages WHERE code = ?";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$code]);
-        
-        $result = $stmt->fetch();
-        
-        return $result ? new self($result) : null;
+        return $query->where('is_active', true);
     }
-    
+
+    /**
+     * Scope to get default language
+     */
+    public function scopeDefault(Builder $query): Builder
+    {
+        return $query->where('is_default', true);
+    }
+
+    /**
+     * Get all active languages for dropdown
+     */
     public static function getActiveLanguages()
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        
-        $sql = "SELECT * FROM languages WHERE is_active = 1";
-        $stmt = $db->query($sql);
-        
-        $results = $stmt->fetchAll();
-        $languages = [];
-        
-        foreach ($results as $result) {
-            $languages[] = new self($result);
-        }
-        
-        return $languages;
+        return static::active()->orderBy('name')->get();
     }
 }

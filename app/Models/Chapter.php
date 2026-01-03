@@ -2,56 +2,122 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Chapter extends Model
 {
-    protected $table = 'chapters';
+    use HasFactory;
+
     protected $fillable = [
+        'exam_id',
+        'insurance_category_id',
         'order_no',
-        'is_active'
+        'is_active',
     ];
 
-    public static function all()
+    protected $casts = [
+        'exam_id' => 'integer',
+        'insurance_category_id' => 'integer',
+        'is_active' => 'boolean',
+        'order_no' => 'integer',
+    ];
+
+    /**
+     * Get the exam that owns the chapter.
+     */
+    public function exam(): BelongsTo
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-
-        // Join with chapter_translations to get title and description
-        $sql = "SELECT c.*, ct.title, ct.description, c.is_active as status
-                FROM chapters c
-                LEFT JOIN chapter_translations ct ON c.id = ct.chapter_id AND ct.language_code = 'en'";
-        $stmt = $db->query($sql);
-
-        $results = $stmt->fetchAll();
-        $chapters = [];
-
-        foreach ($results as $result) {
-            $chapters[] = new static($result);
-        }
-
-        return $chapters;
+        return $this->belongsTo(Exam::class);
     }
 
-    public static function allActive()
+    /**
+     * Get the insurance category that owns the chapter.
+     */
+    public function insuranceCategory(): BelongsTo
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-
-        $sql = "SELECT c.*, ct.title, ct.description, c.is_active as status
-                FROM chapters c
-                LEFT JOIN chapter_translations ct ON c.id = ct.chapter_id AND ct.language_code = 'en'
-                WHERE c.is_active = 1 ORDER BY c.order_no";
-        $stmt = $db->query($sql);
-
-        $results = $stmt->fetchAll();
-        $chapters = [];
-
-        foreach ($results as $result) {
-            $chapters[] = new static($result);
-        }
-
-        return $chapters;
+        return $this->belongsTo(InsuranceCategory::class);
     }
 
-    public function getTopics()
+    /**
+     * Get the translations for the chapter.
+     */
+    public function translations(): HasMany
     {
-        return Topic::findByChapter($this->attributes['id']);
+        return $this->hasMany(ChapterTranslation::class);
+    }
+
+    /**
+     * Get the concepts for this chapter.
+     */
+    public function concepts(): HasMany
+    {
+        return $this->hasMany(Concept::class);
+    }
+
+    /**
+     * Get the one liners for this chapter.
+     */
+    public function oneLiners(): HasMany
+    {
+        return $this->hasMany(OneLiner::class);
+    }
+
+    /**
+     * Get the short & simples for this chapter.
+     */
+    public function shortSimples(): HasMany
+    {
+        return $this->hasMany(ShortSimple::class);
+    }
+
+    /**
+     * Get the tests for this chapter.
+     */
+    public function tests(): HasMany
+    {
+        return $this->hasMany(Test::class);
+    }
+
+    /**
+     * Scope to get only active chapters
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Get the title in the current locale
+     */
+    public function getTitleAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->title : ($this->translations->first()->title ?? 'No Title');
+    }
+
+    /**
+     * Get the description in the current locale
+     */
+    public function getDescriptionAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->description : ($this->translations->first()->description ?? '');
     }
 }

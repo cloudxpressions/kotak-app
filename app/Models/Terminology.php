@@ -2,32 +2,79 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Terminology extends Model
 {
-    protected $table = 'terminologies';
+    use HasFactory;
+
     protected $fillable = [
-        'category'
+        'exam_id',
+        'category',
+        'is_active',
     ];
 
-    public static function all()
+    protected $casts = [
+        'exam_id' => 'integer',
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Get the exam that owns the terminology.
+     */
+    public function exam(): BelongsTo
     {
-        $db = \App\Core\Database::getInstance()->getConnection();
-        $table = static::getTable();
+        return $this->belongsTo(Exam::class);
+    }
 
-        // Join with terminology_translations to get term and definition
-        // Note: terminologies table doesn't have is_active, so we'll add a default status
-        $sql = "SELECT t.*, tt.term, tt.definition, 1 as status
-                FROM terminologies t
-                LEFT JOIN terminology_translations tt ON t.id = tt.terminology_id AND tt.language_code = 'en'";
-        $stmt = $db->query($sql);
+    /**
+     * Get the translations for the terminology.
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(TerminologyTranslation::class);
+    }
 
-        $results = $stmt->fetchAll();
-        $models = [];
+    /**
+     * Scope to get only active terminologies
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
-        foreach ($results as $result) {
-            $models[] = new static($result);
+    /**
+     * Get the term in the current locale
+     */
+    public function getTermAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
         }
 
-        return $models;
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->term : ($this->translations->first()->term ?? 'No Term');
+    }
+
+    /**
+     * Get the definition in the current locale
+     */
+    public function getDefinitionAttribute()
+    {
+        // Load translations if not already loaded to prevent lazy loading violation
+        if (!$this->relationLoaded('translations')) {
+            $this->load('translations');
+        }
+
+        $locale = app()->getLocale();
+        $translation = $this->translations->where('language_code', $locale)->first();
+
+        return $translation ? $translation->definition : ($this->translations->first()->definition ?? '');
     }
 }
